@@ -12,9 +12,9 @@ const {
 const router = Router();
 
 // Protected routes
-router.post('/:cardId/share', generateShareableLink);
+router.post('/:cardId/share', authToken, generateShareableLink);
 router.post('/:cardId/unshare',  revokeShareableLink);
-router.post('/', createDigitalCard);
+router.post('/',authToken ,createDigitalCard);
 router.put('/:cardId', updateDigitalCard);
 router.delete('/:cardId', deleteDigitalCard);
 router.get('/', authToken, getDigitalCards);

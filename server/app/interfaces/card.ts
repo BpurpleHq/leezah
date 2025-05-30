@@ -10,4 +10,5 @@ export interface Card {
     isActive: boolean;
     expiresAt?: Date;
   };
+  qrCode?: string;
 }

@@ -1,57 +1,61 @@
 import { Request, Response, NextFunction } from 'express';
-// import { AuthRequest } from '../middleware/authMiddleware';
+import { AuthRequest } from '../middleware/auth_middleware';
 import { CardModel } from '../models/Card';
+import QRCode from 'qrcode';
 
-// Generate a shareable link for a digital card
-export const generateShareableLink = async (req: Request, res: Response, _next: NextFunction): Promise<Response | void>  => {
+
+export const generateShareableLink = async (req: AuthRequest, res: Response, _next: NextFunction): Promise<Response | void> => {
   const { cardId } = req.params;
-  const { expiresInDays } = req.body; // Optional: number of days until the link expires
 
-//   const card = await CardModel.findOne({ cardId, userId: req.user?.userId });
-const card = await CardModel.findOne({ cardId});
-  if (!card) {
-    return res.status(404).json({ error: 'Digital card not found or you do not have permission to share it' });
+  if (!req.user || !req.user.userId) {
+    return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
   }
 
-  if (card.shareableLink?.isActive) {
-    return res.status(400).json({ error: 'This card already has an active shareable link' });
+  if (!cardId) {
+    return res.status(400).json({ error: 'Card ID is required' });
   }
 
-  // Generate the shareable URL (e.g., https://api.example.com/card/<cardId>)
-  const shareableUrl = `${process.env.BASE_URL}/card/${card.cardId}`;
+  try {
+    const digitalCard = await CardModel.findOne({ cardId, userId: req.user.userId });
+    if (!digitalCard) {
+      return res.status(404).json({ error: 'Digital card not found' });
+    }
 
-  // Set expiration date if provided
-  let expiresAt: Date | undefined;
-  if (expiresInDays && expiresInDays > 0) {
-    expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    // Generate shareable link (simplified example)
+    const shareableUrl = `https://digital-business-card.onrender.com/card/${cardId}`; // Adjust based on your domain
+    digitalCard.shareableLink = {
+      url: shareableUrl,
+      isActive: true,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days expiry
+    };
+
+    // Generate QR code for the shareable link
+    const qrCodeData = await QRCode.toDataURL(shareableUrl, {
+      errorCorrectionLevel: 'H',
+      type: 'image/png',
+      margin: 1,
+    });
+    digitalCard.qrCode = qrCodeData;
+
+    digitalCard.updatedAt = new Date();
+    await digitalCard.save();
+
+    return res.status(200).json({
+      message: 'Shareable link and QR code generated successfully',
+      shareableLink: digitalCard.shareableLink,
+      qrCode: qrCodeData,
+    });
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error generating shareable link`);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
-
-  // Update the card with the shareable link
-  card.shareableLink = {
-    url: shareableUrl,
-    isActive: true,
-    expiresAt,
-  };
-
-  await card.save();
-
-  // Generate sharing links for SMS, WhatsApp, Email, LinkedIn, etc.
-  const encodedUrl = encodeURIComponent(shareableUrl);
-  const sharingOptions = {
-    sms: `sms:?body=Check out my digital business card: ${encodedUrl}`,
-    whatsapp: `https://wa.me/?text=Check out my digital business card: ${encodedUrl}`,
-    email: `mailto:?subject=My Digital Business Card&body=Hi, check out my digital business card: ${encodedUrl}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-  };
-
-  res.json({
-    message: 'Shareable link generated successfully',
-    shareableUrl,
-    expiresAt,
-    sharingOptions,
-  });
 };
+
+
+
+
+
+
 
 // Revoke a shareable link
 export const revokeShareableLink = async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {

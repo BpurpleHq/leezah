@@ -16,6 +16,7 @@ const userSchema = new Schema<User> ({
     description: {type: String},
     createdAt: {type: Date, timestamps: true },
     updatedAt: {type: Date, timestamps: true },
+    googleId: { type: String, unique: true, sparse: true },
 });
 
 

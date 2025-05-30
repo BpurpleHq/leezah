@@ -1,16 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// Add this declaration to extend the Request interface globally
-declare global {
-  namespace Express {
-    interface Request {
-      user?: { userId: string };
-    }
-  }
+
+export interface AuthRequest extends Request {
+  user?: { userId: string; role?: string };
 }
 
-export const authToken = (req: Request, res: Response, next: NextFunction) => {
+export const authToken = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader?.split(' ')[1];
 
@@ -26,6 +22,9 @@ export const authToken = (req: Request, res: Response, next: NextFunction) => {
     
     next();
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(403).json({ error: 'Token expired', expiredAt: error.expiredAt });
+    }
     return res.status(403).json({ error: 'Invalid token' });
   }
 };

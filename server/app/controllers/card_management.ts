@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-// import { AuthRequest } from '../middleware/authMiddleware';
+import { AuthRequest } from '../middleware/auth_middleware';
 import { CardModel } from '../models/Card';
 import { UserModel } from '../models/User';
 import { v4 as uuidv4 } from 'uuid';
+
 
 // Helper function to validate link types based on subscription plan
 // const validateLinkTypes = (links: { type: string; url: string }[], subscriptionPlan: string): string | null => {
@@ -26,11 +27,11 @@ import { v4 as uuidv4 } from 'uuid';
 // };
 
 // Create a new digital card
-export const createDigitalCard = async (req: Request, res: Response, _next: NextFunction): Promise<Response | void>  => {
-  const { userId, title, links } = req.body;
+export const createDigitalCard = async (req: AuthRequest, res: Response, _next: NextFunction): Promise<Response | void>  => {
+  const { title, links } = req.body;
 
   // Input validation
-  if (!userId || !title || !links || !Array.isArray(links) || links.length === 0) {
+  if ( !title || !links || !Array.isArray(links) || links.length === 0) {
     return res.status(400).json({ error: 'Title and at least one link are required' });
   }
 
@@ -62,8 +63,7 @@ export const createDigitalCard = async (req: Request, res: Response, _next: Next
 
   const digitalCard = new CardModel({
     cardId: uuidv4(),
-    // userId: req.user?.userId,
-    userId,
+    userId: req.user?.userId,
     title,
     links,
   });
@@ -75,8 +75,7 @@ export const createDigitalCard = async (req: Request, res: Response, _next: Next
     timestamp: new Date().toISOString(),
     level: 'INFO',
     message: 'Digital card created',
-    userId: userId,
-    // userId: req.user?.userId,
+    userId: req.user?.userId,
     cardId: digitalCard.cardId,
   }));
 
@@ -84,7 +83,7 @@ export const createDigitalCard = async (req: Request, res: Response, _next: Next
 };
 
 // Update an existing digital card
-export const updateDigitalCard = async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
+export const updateDigitalCard = async (req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>  => {
   const { cardId } = req.params;
   const { title, links } = req.body;
 
@@ -130,7 +129,7 @@ export const updateDigitalCard = async (req: Request, res: Response, next: NextF
 };
 
 // Delete a digital card
-export const deleteDigitalCard = async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
+export const deleteDigitalCard = async (req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>  => {
   const { cardId } = req.params;
 
 //   const card = await CardModel.findOneAndDelete({ cardId, userId: req.user?.userId });
@@ -152,14 +151,14 @@ const card = await CardModel.findOneAndDelete({ cardId });
 };
 
 // Get all digital cards for the user
-export const getDigitalCards = async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
+export const getDigitalCards = async (req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>  => {
  const cards = await CardModel.find({ userId: req.user?.userId });
 
   res.json(cards);
 };
 
 // Get a specific digital card by ID
-export const getDigitalCardById = async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  =>{
+export const getDigitalCardById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void>  =>{
   const { cardId } = req.params;
   const card = await CardModel.findOne({ cardId, userId: req.user?.userId });
 

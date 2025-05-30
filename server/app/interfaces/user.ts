@@ -10,8 +10,6 @@ export interface User {
     description: String;
     createdAt: String;
     updatedAt: String;
+    googleId?: string;
 }
 
-// export interface AuthRequest {
-//     userId: String;
-// }

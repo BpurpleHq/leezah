@@ -14,6 +14,7 @@ const CardSchema = new Schema<Card>({
     isActive: { type: Boolean, default: false },
     expiresAt: { type: Date },
   },
+  qrCode: { type: String }, 
 });
 
 export const CardModel = model<Card>('Card', CardSchema);
