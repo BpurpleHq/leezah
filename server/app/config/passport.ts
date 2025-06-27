@@ -19,7 +19,7 @@ passport.deserializeUser(async (userId: string, done) => {
 passport.use(
   new GoogleStrategy(
     {
-      clientID: "353249939213-hscm0f9v5e92gq4rjail8la43ojv69u5.apps.googleusercontent.com",
+      clientID: process.env.GOOGLE_clientID! ,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
 
